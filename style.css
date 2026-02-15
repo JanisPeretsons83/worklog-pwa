@@ -72,6 +72,7 @@ button.ghost{color:var(--muted)}
 .monthlist{margin-top:12px;display:grid;gap:10px}
 .month-row{display:flex;justify-content:space-between;align-items:center;border-bottom:1px dashed var(--border);padding:8px 0;gap:12px}
 .month-row .right{text-align:right;min-width:120px}
+.month-grid-2x2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .footer{text-align:center;color:var(--muted);padding:32px 16px}
 .total-green{color:var(--greenText)}
 .total-orange{color:var(--orange)}
