@@ -1,37 +1,55 @@
-const fs = require('fs');
-const PDFDocument = require('pdfkit');
-const faceApi = require('face-api.js'); // Assuming face-api.js is used for face recognition
+class PDFExport {
+    constructor() {
+        this.faceDetector = null;
+        this.modal = document.getElementById('face-auth-modal');
+        this.canvas = document.getElementById('canvas');
+        this.video = document.getElementById('video');
+    }
 
-// Function to generate PDF
-function generatePDF(content) {
-    const doc = new PDFDocument();
-    const filename = 'output.pdf';
+    // Initialize modal and start video stream
+    initModal() {
+        this.modal.style.display = 'block';
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                this.video.srcObject = stream;
+                this.faceDetector = new blazeFace.BlazeFace(); // Initialize BlazeFace
+                this.faceDetector.load().then(() => this.detectFaces());
+            })
+            .catch(err => console.error('Error accessing camera: ', err));
+    }
 
-    doc.pipe(fs.createWriteStream(filename));
-    doc.fontSize(25).text(content);
-    doc.end();
+    // Detect faces in the video
+    detectFaces() {
+        setInterval(() => {
+            this.faceDetector.estimateFaces(this.video).then(predictions => {
+                if (predictions.length > 0) {
+                    this.modal.style.display = 'none';
+                    this.startPDFGeneration();
+                } else {
+                    console.log('No face detected');
+                }
+            });
+        }, 100); // Check for faces every 100ms
+    }
 
-    return filename;
-}
+    // Start the PDF generation process
+    startPDFGeneration() {
+        html2pdf()
+            .from(this.canvas)
+            .save('export.pdf');
+    }
 
-// Function for face recognition authentication
-async function authenticateFace(inputImage) {
-    const MODEL_URL = '/models';
-    await faceApi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
-    await faceApi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-    await faceApi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
-
-    const inputImageElement = await faceApi.fetchImage(inputImage);
-    const detections = await faceApi.detectAllFaces(inputImageElement).withFaceLandmarks().withFaceDescriptors();
-
-    // Add your authentication logic here
-    if (detections.length > 0) {
-        console.log('Face recognized!');
-        return true; // User authenticated
-    } else {
-        console.log('Face not recognized.');
-        return false; // Authentication failed
+    // Cleanup and stop video
+    stopVideo() {
+        const stream = this.video.srcObject;
+        if (stream) {
+            const tracks = stream.getTracks();
+            tracks.forEach(track => track.stop());
+        }
+        this.video.srcObject = null;
     }
 }
 
-module.exports = { generatePDF, authenticateFace };
+// Usage example:
+const pdfExport = new PDFExport();
+pdfExport.initModal();
